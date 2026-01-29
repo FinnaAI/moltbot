@@ -136,4 +136,21 @@ export const wizardHandlers: GatewayRequestHandlers = {
     }
     respond(true, status, undefined);
   },
+  "wizard.cancel-all": ({ respond, context }) => {
+    // Cancel all running wizard sessions (used for recovery when sessionId is lost)
+    const running = context.findRunningWizard();
+    let cancelled = 0;
+    if (running) {
+      running.session.cancel();
+      context.wizardSessions.delete(running.sessionId);
+      cancelled++;
+    }
+    // Also clean up any stale sessions
+    for (const [sessionId, session] of context.wizardSessions.entries()) {
+      if (session.getStatus() !== "running") {
+        context.wizardSessions.delete(sessionId);
+      }
+    }
+    respond(true, { cancelled }, undefined);
+  },
 };
