@@ -59,11 +59,18 @@ export function resolveModel(
   const resolvedAgentDir = agentDir ?? resolveMoltbotAgentDir();
   const authStorage = discoverAuthStorage(resolvedAgentDir);
   const modelRegistry = discoverModels(authStorage, resolvedAgentDir);
-  const model = modelRegistry.find(provider, modelId) as Model<Api> | null;
+  const registryModel = modelRegistry.find(provider, modelId) as Model<Api> | null;
+  // Only use registry model if provider matches - otherwise use fallback to respect requested provider
+  // This handles cases like openrouter/anthropic/claude-sonnet-4.5 where the modelId matches
+  // a native model but we want to route through a different provider (openrouter)
+  const normalizedProvider = normalizeProviderId(provider);
+  const model =
+    registryModel && normalizeProviderId(registryModel.provider) === normalizedProvider
+      ? registryModel
+      : null;
   if (!model) {
     const providers = cfg?.models?.providers ?? {};
     const inlineModels = buildInlineProviderModels(providers);
-    const normalizedProvider = normalizeProviderId(provider);
     const inlineMatch = inlineModels.find(
       (entry) => normalizeProviderId(entry.provider) === normalizedProvider && entry.id === modelId,
     );
