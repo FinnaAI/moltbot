@@ -420,8 +420,6 @@ export async function runOnboardingWizard(
     });
   }
 
-  await writeConfigFile(nextConfig);
-  logConfigUpdated(runtime);
   await ensureWorkspaceAndSessions(workspaceDir, runtime, {
     skipBootstrap: Boolean(nextConfig.agents?.defaults?.skipBootstrap),
   });
