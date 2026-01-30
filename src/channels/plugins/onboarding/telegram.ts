@@ -47,11 +47,12 @@ async function noteTelegramTokenHelp(prompter: WizardPrompter): Promise<void> {
 async function noteTelegramUserIdHelp(prompter: WizardPrompter): Promise<void> {
   await prompter.note(
     [
-      `1) DM your bot, then read from.id in \`${formatCliCommand("openclaw logs --follow")}\` (safest)`,
-      "2) Or call https://api.telegram.org/bot<bot_token>/getUpdates and read message.from.id",
-      "3) Third-party: DM @userinfobot or @getidsbot",
+      "To find your Telegram user ID:",
+      "1) Open Telegram and DM @userinfobot - it replies with your numeric ID",
+      `2) Or DM your bot, then read from.id in \`${formatCliCommand("openclaw logs --follow")}\``,
+      "",
+      "Enter the numeric ID (e.g. 123456789), not your @username.",
       `Docs: ${formatDocsLink("/telegram")}`,
-      "Website: https://openclaw.ai",
     ].join("\n"),
     "Telegram user id",
   );
@@ -67,33 +68,12 @@ async function promptTelegramAllowFrom(params: {
   const existingAllowFrom = resolved.config.allowFrom ?? [];
   await noteTelegramUserIdHelp(prompter);
 
-  const token = resolved.token;
-  if (!token) {
-    await prompter.note("Telegram token missing; username lookup is unavailable.", "Telegram");
-  }
-
-  const resolveTelegramUserId = async (raw: string): Promise<string | null> => {
+  const parseTelegramUserId = (raw: string): string | null => {
     const trimmed = raw.trim();
     if (!trimmed) return null;
     const stripped = trimmed.replace(/^(telegram|tg):/i, "").trim();
     if (/^\d+$/.test(stripped)) return stripped;
-    if (!token) return null;
-    const username = stripped.startsWith("@") ? stripped : `@${stripped}`;
-    const url = `https://api.telegram.org/bot${token}/getChat?chat_id=${encodeURIComponent(username)}`;
-    try {
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const data = (await res.json().catch(() => null)) as {
-        ok?: boolean;
-        result?: { id?: number | string };
-      } | null;
-      const id = data?.ok ? data?.result?.id : undefined;
-      if (typeof id === "number" || typeof id === "string") return String(id);
-      return null;
-    } catch {
-      // Network error during username lookup - return null to prompt user for numeric ID
-      return null;
-    }
+    return null;
   };
 
   const parseInput = (value: string) =>
@@ -105,17 +85,17 @@ async function promptTelegramAllowFrom(params: {
   let resolvedIds: string[] = [];
   while (resolvedIds.length === 0) {
     const entry = await prompter.text({
-      message: "Telegram allowFrom (username or user id)",
-      placeholder: "@username",
+      message: "Telegram allowFrom (numeric user id)",
+      placeholder: "123456789",
       initialValue: existingAllowFrom[0] ? String(existingAllowFrom[0]) : undefined,
       validate: (value) => (String(value ?? "").trim() ? undefined : "Required"),
     });
     const parts = parseInput(String(entry));
-    const results = await Promise.all(parts.map((part) => resolveTelegramUserId(part)));
-    const unresolved = parts.filter((_, idx) => !results[idx]);
-    if (unresolved.length > 0) {
+    const results = parts.map((part) => parseTelegramUserId(part));
+    const invalid = parts.filter((_, idx) => !results[idx]);
+    if (invalid.length > 0) {
       await prompter.note(
-        `Could not resolve: ${unresolved.join(", ")}. Use @username or numeric id.`,
+        `Invalid: ${invalid.join(", ")}. Enter numeric user IDs only (DM @userinfobot to find yours).`,
         "Telegram allowlist",
       );
       continue;
