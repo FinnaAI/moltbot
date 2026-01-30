@@ -2,7 +2,7 @@
 name: 1password
 description: Set up and use 1Password CLI (op). Use when installing the CLI, enabling desktop app integration, signing in (single or multi-account), or reading/injecting/running secrets via op.
 homepage: https://developer.1password.com/docs/cli/get-started/
-metadata: {"moltbot":{"emoji":"🔐","requires":{"bins":["op"]},"install":[{"id":"brew","kind":"brew","formula":"1password-cli","bins":["op"],"label":"Install 1Password CLI (brew)","os":["darwin"]},{"id":"download","kind":"download","url":"https://cache.agilebits.com/dist/1P/op2/pkg/v2.30.0/op_linux_amd64_v2.30.0.zip","bins":["op"],"label":"Install 1Password CLI (download)","os":["linux"]}]}}
+metadata: {"openclaw":{"emoji":"🔐","requires":{"bins":["op"]},"install":[{"id":"brew","kind":"brew","formula":"1password-cli","bins":["op"],"label":"Install 1Password CLI (brew)","os":["darwin"]},{"id":"download","kind":"download","url":"https://cache.agilebits.com/dist/1P/op2/pkg/v2.30.0/op_linux_amd64_v2.30.0.zip","bins":["op"],"label":"Install 1Password CLI (download)","os":["linux"]}]}}
 ---
 
 # 1Password CLI

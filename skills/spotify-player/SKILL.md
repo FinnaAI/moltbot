@@ -2,7 +2,7 @@
 name: spotify-player
 description: Terminal Spotify playback/search via spogo (preferred) or spotify_player.
 homepage: https://www.spotify.com
-metadata: {"moltbot":{"emoji":"🎵","requires":{"anyBins":["spogo","spotify_player"]},"install":[{"id":"brew-spogo","kind":"brew","formula":"spogo","tap":"steipete/tap","bins":["spogo"],"label":"Install spogo (brew)","os":["darwin"]},{"id":"brew-spotify","kind":"brew","formula":"spotify_player","bins":["spotify_player"],"label":"Install spotify_player (brew)","os":["darwin"]},{"id":"download","kind":"download","url":"https://github.com/aome510/spotify-player/releases/latest/download/spotify_player_linux-x64.tar.gz","bins":["spotify_player"],"label":"Install spotify_player (download)","os":["linux"]}]}}
+metadata: {"openclaw":{"emoji":"🎵","requires":{"anyBins":["spogo","spotify_player"]},"install":[{"id":"brew-spogo","kind":"brew","formula":"spogo","tap":"steipete/tap","bins":["spogo"],"label":"Install spogo (brew)","os":["darwin"]},{"id":"brew-spotify","kind":"brew","formula":"spotify_player","bins":["spotify_player"],"label":"Install spotify_player (brew)","os":["darwin"]},{"id":"download","kind":"download","url":"https://github.com/aome510/spotify-player/releases/latest/download/spotify_player_linux-x64.tar.gz","bins":["spotify_player"],"label":"Install spotify_player (download)","os":["linux"]}]}}
 ---
 
 # spogo / spotify_player

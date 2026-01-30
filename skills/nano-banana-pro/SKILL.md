@@ -2,7 +2,7 @@
 name: nano-banana-pro
 description: Generate or edit images via Gemini 3 Pro Image (Nano Banana Pro).
 homepage: https://ai.google.dev/
-metadata: {"moltbot":{"emoji":"🍌","requires":{"bins":["uv"],"env":["GEMINI_API_KEY"]},"primaryEnv":"GEMINI_API_KEY","install":[{"id":"uv-brew","kind":"brew","formula":"uv","bins":["uv"],"label":"Install uv (brew)","os":["darwin"]},{"id":"uv-download","kind":"download","url":"https://astral.sh/uv/install.sh","bins":["uv"],"label":"Install uv (download)","os":["linux"]}]}}
+metadata: {"openclaw":{"emoji":"🍌","requires":{"bins":["uv"],"env":["GEMINI_API_KEY"]},"primaryEnv":"GEMINI_API_KEY","install":[{"id":"uv-brew","kind":"brew","formula":"uv","bins":["uv"],"label":"Install uv (brew)","os":["darwin"]},{"id":"uv-download","kind":"download","url":"https://astral.sh/uv/install.sh","bins":["uv"],"label":"Install uv (download)","os":["linux"]}]}}
 ---
 
 # Nano Banana Pro (Gemini 3 Pro Image)
