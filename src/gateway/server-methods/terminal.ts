@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { spawn, type IPty } from "@lydell/node-pty";
+import { spawn, type PtyHandle } from "@lydell/node-pty";
 import { ErrorCodes, errorShape } from "../protocol/index.js";
 import type { GatewayRequestContext, GatewayRequestHandlers } from "./types.js";
 
@@ -7,7 +7,7 @@ const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
 interface TerminalSession {
   id: string;
-  pty: IPty;
+  pty: PtyHandle;
   idleTimer: ReturnType<typeof setTimeout>;
 }
 
@@ -47,7 +47,7 @@ export const terminalHandlers: GatewayRequestHandlers = {
       : 24;
 
     const sessionId = crypto.randomUUID();
-    let pty: IPty;
+    let pty: PtyHandle;
     try {
       pty = spawn("/bin/bash", [], {
         name: "xterm-256color",
@@ -68,7 +68,7 @@ export const terminalHandlers: GatewayRequestHandlers = {
     activeSession = session;
     resetIdleTimer(session, context);
 
-    pty.onData((data) => {
+    pty.onData((data: string) => {
       context.broadcast(
         "terminal.output",
         { sessionId: session.id, data },
