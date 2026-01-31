@@ -4,6 +4,7 @@ import {
   LineConfigSchema,
   processLineMessage,
   type ChannelPlugin,
+  type ChannelStatusIssue,
   type OpenClawConfig,
   type LineConfig,
   type LineChannelData,
@@ -138,9 +139,9 @@ export const linePlugin: ChannelPlugin<ResolvedLineAccount> = {
       tokenSource: account.tokenSource,
     }),
     resolveAllowFrom: ({ cfg, accountId }) =>
-      (getLineRuntime().channel.line.resolveLineAccount({ cfg, accountId }).config.allowFrom ?? []).map(
-        (entry) => String(entry),
-      ),
+      (
+        getLineRuntime().channel.line.resolveLineAccount({ cfg, accountId }).config.allowFrom ?? []
+      ).map((entry) => String(entry)),
     formatAllowFrom: ({ allowFrom }) =>
       allowFrom
         .map((entry) => String(entry).trim())
@@ -169,8 +170,8 @@ export const linePlugin: ChannelPlugin<ResolvedLineAccount> = {
       };
     },
     collectWarnings: ({ account, cfg }) => {
-      const defaultGroupPolicy =
-        (cfg.channels?.defaults as { groupPolicy?: string } | undefined)?.groupPolicy;
+      const defaultGroupPolicy = (cfg.channels?.defaults as { groupPolicy?: string } | undefined)
+        ?.groupPolicy;
       const groupPolicy = account.config.groupPolicy ?? defaultGroupPolicy ?? "allowlist";
       if (groupPolicy !== "open") return [];
       return [
@@ -370,14 +371,9 @@ export const linePlugin: ChannelPlugin<ResolvedLineAccount> = {
         : { text: "", flexMessages: [] };
 
       const chunkLimit =
-        runtime.channel.text.resolveTextChunkLimit?.(
-          cfg,
-          "line",
-          accountId ?? undefined,
-          {
-            fallbackLimit: 5000,
-          },
-        ) ?? 5000;
+        runtime.channel.text.resolveTextChunkLimit?.(cfg, "line", accountId ?? undefined, {
+          fallbackLimit: 5000,
+        }) ?? 5000;
 
       const chunks = processed.text
         ? runtime.channel.text.chunkMarkdownText(processed.text, chunkLimit)
@@ -560,19 +556,26 @@ export const linePlugin: ChannelPlugin<ResolvedLineAccount> = {
       lastStopAt: null,
       lastError: null,
     },
-    collectStatusIssues: ({ account }) => {
-      const issues: Array<{ level: "error" | "warning"; message: string }> = [];
-      if (!account.channelAccessToken?.trim()) {
-        issues.push({
-          level: "error",
-          message: "LINE channel access token not configured",
-        });
-      }
-      if (!account.channelSecret?.trim()) {
-        issues.push({
-          level: "error",
-          message: "LINE channel secret not configured",
-        });
+    collectStatusIssues: (accounts) => {
+      const issues: ChannelStatusIssue[] = [];
+      for (const account of accounts) {
+        const accountId = account.accountId ?? DEFAULT_ACCOUNT_ID;
+        if (!account.channelAccessToken?.trim()) {
+          issues.push({
+            channel: "line",
+            accountId,
+            kind: "config",
+            message: "LINE channel access token not configured",
+          });
+        }
+        if (!account.channelSecret?.trim()) {
+          issues.push({
+            channel: "line",
+            accountId,
+            kind: "config",
+            message: "LINE channel secret not configured",
+          });
+        }
       }
       return issues;
     },
