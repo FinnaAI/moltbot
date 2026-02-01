@@ -43,6 +43,7 @@ export const wizardHandlers: GatewayRequestHandlers = {
     const result = await session.next();
     if (result.done) {
       context.purgeWizardSession(sessionId);
+      context.flushDeferredRestart?.();
     }
     respond(true, { sessionId, ...result }, undefined);
   },
@@ -80,6 +81,7 @@ export const wizardHandlers: GatewayRequestHandlers = {
     const result = await session.next();
     if (result.done) {
       context.purgeWizardSession(sessionId);
+      context.flushDeferredRestart?.();
     }
     respond(true, result, undefined);
   },
@@ -107,6 +109,7 @@ export const wizardHandlers: GatewayRequestHandlers = {
       error: session.getError(),
     };
     context.wizardSessions.delete(sessionId);
+    context.flushDeferredRestart?.();
     respond(true, status, undefined);
   },
   "wizard.status": ({ params, respond, context }) => {
@@ -152,6 +155,7 @@ export const wizardHandlers: GatewayRequestHandlers = {
         context.wizardSessions.delete(sessionId);
       }
     }
+    context.flushDeferredRestart?.();
     respond(true, { cancelled }, undefined);
   },
 };

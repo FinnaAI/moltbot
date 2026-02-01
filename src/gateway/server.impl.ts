@@ -423,6 +423,8 @@ export async function startGatewayServer(
 
   const canvasHostServerPort = (canvasHostServer as CanvasHostServer | null)?.port;
 
+  let flushDeferredRestart: () => void = () => {};
+
   attachGatewayWsHandlers({
     wss,
     clients,
@@ -477,6 +479,9 @@ export async function startGatewayServer(
       markChannelLoggedOut,
       wizardRunner,
       broadcastVoiceWakeChanged,
+      flushDeferredRestart: () => {
+        flushDeferredRestart();
+      },
     },
   });
   logGatewayStartup({
@@ -510,7 +515,7 @@ export async function startGatewayServer(
     logBrowser,
   }));
 
-  const { applyHotReload, requestGatewayRestart } = createGatewayReloadHandlers({
+  const reloadHandlers = createGatewayReloadHandlers({
     deps,
     broadcast,
     getState: () => ({
@@ -529,12 +534,22 @@ export async function startGatewayServer(
     },
     startChannel,
     stopChannel,
+    hasActiveWizard: () => {
+      for (const session of wizardSessions.values()) {
+        if (session.getStatus() === "running") {
+          return true;
+        }
+      }
+      return false;
+    },
     logHooks,
     logBrowser,
     logChannels,
     logCron,
     logReload,
   });
+  const { applyHotReload, requestGatewayRestart } = reloadHandlers;
+  flushDeferredRestart = reloadHandlers.flushDeferredRestart;
 
   const configReloader = startGatewayConfigReloader({
     initialConfig: cfgAtStart,

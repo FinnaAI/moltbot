@@ -84,6 +84,7 @@ export type GatewayRequestContext = {
     prompter: import("../../wizard/prompts.js").WizardPrompter,
   ) => Promise<void>;
   broadcastVoiceWakeChanged: (triggers: string[]) => void;
+  flushDeferredRestart?: () => void;
 };
 
 export type GatewayRequestOptions = {

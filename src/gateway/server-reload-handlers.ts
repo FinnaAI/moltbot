@@ -30,6 +30,7 @@ export function createGatewayReloadHandlers(params: {
   setState: (state: GatewayHotReloadState) => void;
   startChannel: (name: ChannelKind) => Promise<void>;
   stopChannel: (name: ChannelKind) => Promise<void>;
+  hasActiveWizard: () => boolean;
   logHooks: {
     info: (msg: string) => void;
     warn: (msg: string) => void;
@@ -140,10 +141,23 @@ export function createGatewayReloadHandlers(params: {
     params.setState(nextState);
   };
 
+  let deferredRestart: {
+    plan: GatewayReloadPlan;
+    nextConfig: ReturnType<typeof loadConfig>;
+  } | null = null;
+
   const requestGatewayRestart = (
     plan: GatewayReloadPlan,
     nextConfig: ReturnType<typeof loadConfig>,
   ) => {
+    if (params.hasActiveWizard()) {
+      const reasons = plan.restartReasons.length
+        ? plan.restartReasons.join(", ")
+        : plan.changedPaths.join(", ");
+      params.logReload.info(`config restart deferred (wizard active): ${reasons}`);
+      deferredRestart = { plan, nextConfig };
+      return;
+    }
     setGatewaySigusr1RestartPolicy({ allowExternal: nextConfig.commands?.restart === true });
     const reasons = plan.restartReasons.length
       ? plan.restartReasons.join(", ")
@@ -157,5 +171,14 @@ export function createGatewayReloadHandlers(params: {
     process.emit("SIGUSR1");
   };
 
-  return { applyHotReload, requestGatewayRestart };
+  const flushDeferredRestart = () => {
+    if (!deferredRestart) {
+      return;
+    }
+    const { plan, nextConfig } = deferredRestart;
+    deferredRestart = null;
+    requestGatewayRestart(plan, nextConfig);
+  };
+
+  return { applyHotReload, requestGatewayRestart, flushDeferredRestart };
 }
