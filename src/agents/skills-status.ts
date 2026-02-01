@@ -41,6 +41,7 @@ export type SkillStatusEntry = {
   emoji?: string;
   homepage?: string;
   always: boolean;
+  enabled?: boolean;
   disabled: boolean;
   blockedByAllowlist: boolean;
   eligible: boolean;
@@ -264,6 +265,7 @@ function buildSkillStatus(
     emoji,
     homepage,
     always,
+    enabled: skillConfig?.enabled === true ? true : undefined,
     disabled,
     blockedByAllowlist,
     eligible,
