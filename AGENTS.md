@@ -28,6 +28,13 @@
 - README (GitHub): keep absolute docs URLs (`https://docs.openclaw.ai/...`) so links work on GitHub.
 - Docs content must be generic: no personal device names/hostnames/paths; use placeholders like `user@gateway-host` and “gateway host”.
 
+## Behavioral Invariants (From Docs)
+
+- Routing is deterministic: replies go back to the channel they arrived on.
+- Group replies require mentions by default; `activation` can switch to `always` but agents should return `NO_REPLY` when they cannot add value.
+- Heartbeats are skipped for groups to avoid noisy broadcasts.
+- Gateway protocol: first WebSocket frame must be `connect`; non-local connects must sign the `connect.challenge` nonce.
+
 ## exe.dev VM ops (general)
 
 - Access: stable path is `ssh exe.dev` then `ssh vm-name` (assume SSH key already set).
