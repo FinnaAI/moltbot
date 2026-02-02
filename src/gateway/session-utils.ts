@@ -184,7 +184,8 @@ export function loadSessionEntry(sessionKey: string) {
   const agentId = resolveSessionStoreAgentId(cfg, canonicalKey);
   const storePath = resolveStorePath(sessionCfg?.store, { agentId });
   const store = loadSessionStore(storePath);
-  const entry = store[canonicalKey];
+  const rawKey = sessionKey.trim();
+  const entry = store[canonicalKey] ?? (rawKey !== canonicalKey ? store[rawKey] : undefined);
   return { cfg, storePath, store, entry, canonicalKey };
 }
 
