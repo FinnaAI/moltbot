@@ -1,5 +1,5 @@
-import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -13,9 +13,13 @@ type RunResult = {
 
 function pickAnthropicEnv(): { type: "oauth" | "api"; value: string } | null {
   const oauth = process.env.ANTHROPIC_OAUTH_TOKEN?.trim();
-  if (oauth) return { type: "oauth", value: oauth };
+  if (oauth) {
+    return { type: "oauth", value: oauth };
+  }
   const api = process.env.ANTHROPIC_API_KEY?.trim();
-  if (api) return { type: "api", value: api };
+  if (api) {
+    return { type: "api", value: api };
+  }
   return null;
 }
 

@@ -1,3 +1,4 @@
+import type { AuthProfileCredential, AuthProfileStore, OAuthCredential } from "./types.js";
 import {
   readQwenCliCredentialsCached,
   readMiniMaxCliCredentialsCached,
@@ -11,7 +12,6 @@ import {
   CODEX_CLI_PROFILE_ID,
   log,
 } from "./constants.js";
-import type { AuthProfileCredential, AuthProfileStore, OAuthCredential } from "./types.js";
 
 function shallowEqualOAuthCredentials(a: OAuthCredential | undefined, b: OAuthCredential): boolean {
   if (!a) {

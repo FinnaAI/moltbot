@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { EventEmitter } from "node:events";
-
-import { removeAckReactionAfterReply, shouldAckReaction } from "openclaw/plugin-sdk";
 import type { OpenClawConfig, PluginRuntime } from "openclaw/plugin-sdk";
+import { EventEmitter } from "node:events";
+import { removeAckReactionAfterReply, shouldAckReaction } from "openclaw/plugin-sdk";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ResolvedBlueBubblesAccount } from "./accounts.js";
 import {
   handleBlueBubblesWebhookRequest,
   registerBlueBubblesWebhookTarget,
@@ -11,7 +11,6 @@ import {
   _resetBlueBubblesShortIdState,
 } from "./monitor.js";
 import { setBlueBubblesRuntime } from "./runtime.js";
-import type { ResolvedBlueBubblesAccount } from "./accounts.js";
 
 // Mock dependencies
 vi.mock("./send.js", () => ({
@@ -262,6 +261,7 @@ function createMockRequest(
   (req as unknown as { socket: { remoteAddress: string } }).socket = { remoteAddress: "127.0.0.1" };
 
   // Emit body data after a microtask
+  // oxlint-disable-next-line no-floating-promises
   Promise.resolve().then(() => {
     const bodyStr = typeof body === "string" ? body : JSON.stringify(body);
     req.emit("data", Buffer.from(bodyStr));
@@ -1225,7 +1225,9 @@ describe("BlueBubbles webhook monitor", () => {
 
           const flush = async (key: string) => {
             const bucket = buckets.get(key);
-            if (!bucket) return;
+            if (!bucket) {
+              return;
+            }
             if (bucket.timer) {
               clearTimeout(bucket.timer);
               bucket.timer = null;
@@ -1253,7 +1255,9 @@ describe("BlueBubbles webhook monitor", () => {
               const existing = buckets.get(key);
               const bucket = existing ?? { items: [], timer: null };
               bucket.items.push(item);
-              if (bucket.timer) clearTimeout(bucket.timer);
+              if (bucket.timer) {
+                clearTimeout(bucket.timer);
+              }
               bucket.timer = setTimeout(async () => {
                 await flush(key);
               }, params.debounceMs);
