@@ -102,6 +102,19 @@ describe("buildGatewayReloadPlan", () => {
     expect(plan.restartChannels).toEqual(expected);
   });
 
+  it("restarts heartbeat when default model changes", () => {
+    const plan = buildGatewayReloadPlan(["agents.defaults.model.primary"]);
+    expect(plan.restartGateway).toBe(false);
+    expect(plan.restartHeartbeat).toBe(true);
+    expect(plan.hotReasons).toContain("agents.defaults.model.primary");
+  });
+
+  it("restarts heartbeat when model provider changes", () => {
+    const plan = buildGatewayReloadPlan(["agents.defaults.model.provider"]);
+    expect(plan.restartGateway).toBe(false);
+    expect(plan.restartHeartbeat).toBe(true);
+  });
+
   it("treats gateway.remote as no-op", () => {
     const plan = buildGatewayReloadPlan(["gateway.remote.url"]);
     expect(plan.restartGateway).toBe(false);
