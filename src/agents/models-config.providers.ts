@@ -47,6 +47,33 @@ const MINIMAX_API_COST = {
   cacheWrite: 10,
 };
 
+type ProviderModelConfig = NonNullable<ProviderConfig["models"]>[number];
+
+function buildMinimaxModel(params: {
+  id: string;
+  name: string;
+  reasoning: boolean;
+  input: ProviderModelConfig["input"];
+}): ProviderModelConfig {
+  return {
+    id: params.id,
+    name: params.name,
+    reasoning: params.reasoning,
+    input: params.input,
+    cost: MINIMAX_API_COST,
+    contextWindow: MINIMAX_DEFAULT_CONTEXT_WINDOW,
+    maxTokens: MINIMAX_DEFAULT_MAX_TOKENS,
+  };
+}
+
+function buildMinimaxTextModel(params: {
+  id: string;
+  name: string;
+  reasoning: boolean;
+}): ProviderModelConfig {
+  return buildMinimaxModel({ ...params, input: ["text"] });
+}
+
 const XIAOMI_BASE_URL = "https://api.xiaomimimo.com/anthropic";
 export const XIAOMI_DEFAULT_MODEL_ID = "mimo-v2-flash";
 const XIAOMI_DEFAULT_CONTEXT_WINDOW = 262144;
@@ -106,6 +133,17 @@ export const QIANFAN_DEFAULT_MODEL_ID = "deepseek-v3.2";
 const QIANFAN_DEFAULT_CONTEXT_WINDOW = 98304;
 const QIANFAN_DEFAULT_MAX_TOKENS = 32768;
 const QIANFAN_DEFAULT_COST = {
+  input: 0,
+  output: 0,
+  cacheRead: 0,
+  cacheWrite: 0,
+};
+
+const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
+const NVIDIA_DEFAULT_MODEL_ID = "nvidia/llama-3.1-nemotron-70b-instruct";
+const NVIDIA_DEFAULT_CONTEXT_WINDOW = 131072;
+const NVIDIA_DEFAULT_MAX_TOKENS = 4096;
+const NVIDIA_DEFAULT_COST = {
   input: 0,
   output: 0,
   cacheRead: 0,
@@ -378,51 +416,32 @@ function buildMinimaxProvider(): ProviderConfig {
     baseUrl: MINIMAX_PORTAL_BASE_URL,
     api: "anthropic-messages",
     models: [
-      {
+      buildMinimaxTextModel({
         id: MINIMAX_DEFAULT_MODEL_ID,
         name: "MiniMax M2.1",
         reasoning: false,
-        input: ["text"],
-        cost: MINIMAX_API_COST,
-        contextWindow: MINIMAX_DEFAULT_CONTEXT_WINDOW,
-        maxTokens: MINIMAX_DEFAULT_MAX_TOKENS,
-      },
-      {
+      }),
+      buildMinimaxTextModel({
         id: "MiniMax-M2.1-lightning",
         name: "MiniMax M2.1 Lightning",
         reasoning: false,
-        input: ["text"],
-        cost: MINIMAX_API_COST,
-        contextWindow: MINIMAX_DEFAULT_CONTEXT_WINDOW,
-        maxTokens: MINIMAX_DEFAULT_MAX_TOKENS,
-      },
-      {
+      }),
+      buildMinimaxModel({
         id: MINIMAX_DEFAULT_VISION_MODEL_ID,
         name: "MiniMax VL 01",
         reasoning: false,
         input: ["text", "image"],
-        cost: MINIMAX_API_COST,
-        contextWindow: MINIMAX_DEFAULT_CONTEXT_WINDOW,
-        maxTokens: MINIMAX_DEFAULT_MAX_TOKENS,
-      },
-      {
+      }),
+      buildMinimaxTextModel({
         id: "MiniMax-M2.5",
         name: "MiniMax M2.5",
         reasoning: true,
-        input: ["text"],
-        cost: MINIMAX_API_COST,
-        contextWindow: MINIMAX_DEFAULT_CONTEXT_WINDOW,
-        maxTokens: MINIMAX_DEFAULT_MAX_TOKENS,
-      },
-      {
+      }),
+      buildMinimaxTextModel({
         id: "MiniMax-M2.5-Lightning",
         name: "MiniMax M2.5 Lightning",
         reasoning: true,
-        input: ["text"],
-        cost: MINIMAX_API_COST,
-        contextWindow: MINIMAX_DEFAULT_CONTEXT_WINDOW,
-        maxTokens: MINIMAX_DEFAULT_MAX_TOKENS,
-      },
+      }),
     ],
   };
 }
@@ -432,24 +451,16 @@ function buildMinimaxPortalProvider(): ProviderConfig {
     baseUrl: MINIMAX_PORTAL_BASE_URL,
     api: "anthropic-messages",
     models: [
-      {
+      buildMinimaxTextModel({
         id: MINIMAX_DEFAULT_MODEL_ID,
         name: "MiniMax M2.1",
         reasoning: false,
-        input: ["text"],
-        cost: MINIMAX_API_COST,
-        contextWindow: MINIMAX_DEFAULT_CONTEXT_WINDOW,
-        maxTokens: MINIMAX_DEFAULT_MAX_TOKENS,
-      },
-      {
+      }),
+      buildMinimaxTextModel({
         id: "MiniMax-M2.5",
         name: "MiniMax M2.5",
         reasoning: true,
-        input: ["text"],
-        cost: MINIMAX_API_COST,
-        contextWindow: MINIMAX_DEFAULT_CONTEXT_WINDOW,
-        maxTokens: MINIMAX_DEFAULT_MAX_TOKENS,
-      },
+      }),
     ],
   };
 }
@@ -609,6 +620,42 @@ export function buildQianfanProvider(): ProviderConfig {
   };
 }
 
+export function buildNvidiaProvider(): ProviderConfig {
+  return {
+    baseUrl: NVIDIA_BASE_URL,
+    api: "openai-completions",
+    models: [
+      {
+        id: NVIDIA_DEFAULT_MODEL_ID,
+        name: "NVIDIA Llama 3.1 Nemotron 70B Instruct",
+        reasoning: false,
+        input: ["text"],
+        cost: NVIDIA_DEFAULT_COST,
+        contextWindow: NVIDIA_DEFAULT_CONTEXT_WINDOW,
+        maxTokens: NVIDIA_DEFAULT_MAX_TOKENS,
+      },
+      {
+        id: "meta/llama-3.3-70b-instruct",
+        name: "Meta Llama 3.3 70B Instruct",
+        reasoning: false,
+        input: ["text"],
+        cost: NVIDIA_DEFAULT_COST,
+        contextWindow: 131072,
+        maxTokens: 4096,
+      },
+      {
+        id: "nvidia/mistral-nemo-minitron-8b-8k-instruct",
+        name: "NVIDIA Mistral NeMo Minitron 8B Instruct",
+        reasoning: false,
+        input: ["text"],
+        cost: NVIDIA_DEFAULT_COST,
+        contextWindow: 8192,
+        maxTokens: 2048,
+      },
+    ],
+  };
+}
+
 export async function resolveImplicitProviders(params: {
   agentDir: string;
   explicitProviders?: Record<string, ProviderConfig> | null;
@@ -751,6 +798,13 @@ export async function resolveImplicitProviders(params: {
     resolveApiKeyFromProfiles({ provider: "qianfan", store: authStore });
   if (qianfanKey) {
     providers.qianfan = { ...buildQianfanProvider(), apiKey: qianfanKey };
+  }
+
+  const nvidiaKey =
+    resolveEnvApiKeyVarName("nvidia") ??
+    resolveApiKeyFromProfiles({ provider: "nvidia", store: authStore });
+  if (nvidiaKey) {
+    providers.nvidia = { ...buildNvidiaProvider(), apiKey: nvidiaKey };
   }
 
   return providers;

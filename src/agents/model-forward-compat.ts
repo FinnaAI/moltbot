@@ -10,7 +10,6 @@ const OPENAI_CODEX_TEMPLATE_MODEL_IDS = ["gpt-5.2-codex"] as const;
 const ANTHROPIC_OPUS_46_MODEL_ID = "claude-opus-4-6";
 const ANTHROPIC_OPUS_46_DOT_MODEL_ID = "claude-opus-4.6";
 const ANTHROPIC_OPUS_TEMPLATE_MODEL_IDS = ["claude-opus-4-5", "claude-opus-4.5"] as const;
-
 const ANTHROPIC_SONNET_46_MODEL_ID = "claude-sonnet-4-6";
 const ANTHROPIC_SONNET_46_DOT_MODEL_ID = "claude-sonnet-4.6";
 const ANTHROPIC_SONNET_TEMPLATE_MODEL_IDS = ["claude-sonnet-4-5", "claude-sonnet-4.5"] as const;
@@ -41,6 +40,29 @@ export const ANTIGRAVITY_OPUS_46_FORWARD_COMPAT_CANDIDATES = [
     templatePrefixes: ["google-antigravity/claude-opus-4-5", "google-antigravity/claude-opus-4.5"],
   },
 ] as const;
+
+function cloneFirstTemplateModel(params: {
+  normalizedProvider: string;
+  trimmedModelId: string;
+  templateIds: string[];
+  modelRegistry: ModelRegistry;
+  patch?: Partial<Model<Api>>;
+}): Model<Api> | undefined {
+  const { normalizedProvider, trimmedModelId, templateIds, modelRegistry } = params;
+  for (const templateId of [...new Set(templateIds)].filter(Boolean)) {
+    const template = modelRegistry.find(normalizedProvider, templateId) as Model<Api> | null;
+    if (!template) {
+      continue;
+    }
+    return normalizeModelCompat({
+      ...template,
+      id: trimmedModelId,
+      name: trimmedModelId,
+      ...params.patch,
+    } as Model<Api>);
+  }
+  return undefined;
+}
 
 function resolveOpenAICodexGpt53FallbackModel(
   provider: string,
@@ -112,19 +134,50 @@ function resolveAnthropicOpus46ForwardCompatModel(
   }
   templateIds.push(...ANTHROPIC_OPUS_TEMPLATE_MODEL_IDS);
 
-  for (const templateId of [...new Set(templateIds)].filter(Boolean)) {
-    const template = modelRegistry.find(normalizedProvider, templateId) as Model<Api> | null;
-    if (!template) {
-      continue;
-    }
-    return normalizeModelCompat({
-      ...template,
-      id: trimmedModelId,
-      name: trimmedModelId,
-    } as Model<Api>);
+  return cloneFirstTemplateModel({
+    normalizedProvider,
+    trimmedModelId,
+    templateIds,
+    modelRegistry,
+  });
+}
+
+function resolveAnthropicSonnet46ForwardCompatModel(
+  provider: string,
+  modelId: string,
+  modelRegistry: ModelRegistry,
+): Model<Api> | undefined {
+  const normalizedProvider = normalizeProviderId(provider);
+  if (normalizedProvider !== "anthropic") {
+    return undefined;
   }
 
-  return undefined;
+  const trimmedModelId = modelId.trim();
+  const lower = trimmedModelId.toLowerCase();
+  const isSonnet46 =
+    lower === ANTHROPIC_SONNET_46_MODEL_ID ||
+    lower === ANTHROPIC_SONNET_46_DOT_MODEL_ID ||
+    lower.startsWith(`${ANTHROPIC_SONNET_46_MODEL_ID}-`) ||
+    lower.startsWith(`${ANTHROPIC_SONNET_46_DOT_MODEL_ID}-`);
+  if (!isSonnet46) {
+    return undefined;
+  }
+
+  const templateIds: string[] = [];
+  if (lower.startsWith(ANTHROPIC_SONNET_46_MODEL_ID)) {
+    templateIds.push(lower.replace(ANTHROPIC_SONNET_46_MODEL_ID, "claude-sonnet-4-5"));
+  }
+  if (lower.startsWith(ANTHROPIC_SONNET_46_DOT_MODEL_ID)) {
+    templateIds.push(lower.replace(ANTHROPIC_SONNET_46_DOT_MODEL_ID, "claude-sonnet-4.5"));
+  }
+  templateIds.push(...ANTHROPIC_SONNET_TEMPLATE_MODEL_IDS);
+
+  return cloneFirstTemplateModel({
+    normalizedProvider,
+    trimmedModelId,
+    templateIds,
+    modelRegistry,
+  });
 }
 
 // Z.ai's GLM-5 may not be present in pi-ai's built-in model catalog yet.
@@ -167,51 +220,6 @@ function resolveZaiGlm5ForwardCompatModel(
     contextWindow: DEFAULT_CONTEXT_TOKENS,
     maxTokens: DEFAULT_CONTEXT_TOKENS,
   } as Model<Api>);
-}
-
-function resolveAnthropicSonnet46ForwardCompatModel(
-  provider: string,
-  modelId: string,
-  modelRegistry: ModelRegistry,
-): Model<Api> | undefined {
-  const normalizedProvider = normalizeProviderId(provider);
-  if (normalizedProvider !== "anthropic") {
-    return undefined;
-  }
-
-  const trimmedModelId = modelId.trim();
-  const lower = trimmedModelId.toLowerCase();
-  const isSonnet46 =
-    lower === ANTHROPIC_SONNET_46_MODEL_ID ||
-    lower === ANTHROPIC_SONNET_46_DOT_MODEL_ID ||
-    lower.startsWith(`${ANTHROPIC_SONNET_46_MODEL_ID}-`) ||
-    lower.startsWith(`${ANTHROPIC_SONNET_46_DOT_MODEL_ID}-`);
-  if (!isSonnet46) {
-    return undefined;
-  }
-
-  const templateIds: string[] = [];
-  if (lower.startsWith(ANTHROPIC_SONNET_46_MODEL_ID)) {
-    templateIds.push(lower.replace(ANTHROPIC_SONNET_46_MODEL_ID, "claude-sonnet-4-5"));
-  }
-  if (lower.startsWith(ANTHROPIC_SONNET_46_DOT_MODEL_ID)) {
-    templateIds.push(lower.replace(ANTHROPIC_SONNET_46_DOT_MODEL_ID, "claude-sonnet-4.5"));
-  }
-  templateIds.push(...ANTHROPIC_SONNET_TEMPLATE_MODEL_IDS);
-
-  for (const templateId of [...new Set(templateIds)].filter(Boolean)) {
-    const template = modelRegistry.find(normalizedProvider, templateId) as Model<Api> | null;
-    if (!template) {
-      continue;
-    }
-    return normalizeModelCompat({
-      ...template,
-      id: trimmedModelId,
-      name: trimmedModelId,
-    } as Model<Api>);
-  }
-
-  return undefined;
 }
 
 function resolveAntigravityOpus46ForwardCompatModel(
@@ -260,19 +268,12 @@ function resolveAntigravityOpus46ForwardCompatModel(
   templateIds.push(...ANTIGRAVITY_OPUS_TEMPLATE_MODEL_IDS);
   templateIds.push(...ANTIGRAVITY_OPUS_THINKING_TEMPLATE_MODEL_IDS);
 
-  for (const templateId of [...new Set(templateIds)].filter(Boolean)) {
-    const template = modelRegistry.find(normalizedProvider, templateId) as Model<Api> | null;
-    if (!template) {
-      continue;
-    }
-    return normalizeModelCompat({
-      ...template,
-      id: trimmedModelId,
-      name: trimmedModelId,
-    } as Model<Api>);
-  }
-
-  return undefined;
+  return cloneFirstTemplateModel({
+    normalizedProvider,
+    trimmedModelId,
+    templateIds,
+    modelRegistry,
+  });
 }
 
 export function resolveForwardCompatModel(
