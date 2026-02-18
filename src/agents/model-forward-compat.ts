@@ -11,6 +11,10 @@ const ANTHROPIC_OPUS_46_MODEL_ID = "claude-opus-4-6";
 const ANTHROPIC_OPUS_46_DOT_MODEL_ID = "claude-opus-4.6";
 const ANTHROPIC_OPUS_TEMPLATE_MODEL_IDS = ["claude-opus-4-5", "claude-opus-4.5"] as const;
 
+const ANTHROPIC_SONNET_46_MODEL_ID = "claude-sonnet-4-6";
+const ANTHROPIC_SONNET_46_DOT_MODEL_ID = "claude-sonnet-4.6";
+const ANTHROPIC_SONNET_TEMPLATE_MODEL_IDS = ["claude-sonnet-4-5", "claude-sonnet-4.5"] as const;
+
 const ZAI_GLM5_MODEL_ID = "glm-5";
 const ZAI_GLM5_TEMPLATE_MODEL_IDS = ["glm-4.7"] as const;
 
@@ -165,6 +169,51 @@ function resolveZaiGlm5ForwardCompatModel(
   } as Model<Api>);
 }
 
+function resolveAnthropicSonnet46ForwardCompatModel(
+  provider: string,
+  modelId: string,
+  modelRegistry: ModelRegistry,
+): Model<Api> | undefined {
+  const normalizedProvider = normalizeProviderId(provider);
+  if (normalizedProvider !== "anthropic") {
+    return undefined;
+  }
+
+  const trimmedModelId = modelId.trim();
+  const lower = trimmedModelId.toLowerCase();
+  const isSonnet46 =
+    lower === ANTHROPIC_SONNET_46_MODEL_ID ||
+    lower === ANTHROPIC_SONNET_46_DOT_MODEL_ID ||
+    lower.startsWith(`${ANTHROPIC_SONNET_46_MODEL_ID}-`) ||
+    lower.startsWith(`${ANTHROPIC_SONNET_46_DOT_MODEL_ID}-`);
+  if (!isSonnet46) {
+    return undefined;
+  }
+
+  const templateIds: string[] = [];
+  if (lower.startsWith(ANTHROPIC_SONNET_46_MODEL_ID)) {
+    templateIds.push(lower.replace(ANTHROPIC_SONNET_46_MODEL_ID, "claude-sonnet-4-5"));
+  }
+  if (lower.startsWith(ANTHROPIC_SONNET_46_DOT_MODEL_ID)) {
+    templateIds.push(lower.replace(ANTHROPIC_SONNET_46_DOT_MODEL_ID, "claude-sonnet-4.5"));
+  }
+  templateIds.push(...ANTHROPIC_SONNET_TEMPLATE_MODEL_IDS);
+
+  for (const templateId of [...new Set(templateIds)].filter(Boolean)) {
+    const template = modelRegistry.find(normalizedProvider, templateId) as Model<Api> | null;
+    if (!template) {
+      continue;
+    }
+    return normalizeModelCompat({
+      ...template,
+      id: trimmedModelId,
+      name: trimmedModelId,
+    } as Model<Api>);
+  }
+
+  return undefined;
+}
+
 function resolveAntigravityOpus46ForwardCompatModel(
   provider: string,
   modelId: string,
@@ -234,6 +283,7 @@ export function resolveForwardCompatModel(
   return (
     resolveOpenAICodexGpt53FallbackModel(provider, modelId, modelRegistry) ??
     resolveAnthropicOpus46ForwardCompatModel(provider, modelId, modelRegistry) ??
+    resolveAnthropicSonnet46ForwardCompatModel(provider, modelId, modelRegistry) ??
     resolveZaiGlm5ForwardCompatModel(provider, modelId, modelRegistry) ??
     resolveAntigravityOpus46ForwardCompatModel(provider, modelId, modelRegistry)
   );

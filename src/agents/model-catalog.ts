@@ -27,9 +27,39 @@ let hasLoggedModelCatalogError = false;
 const defaultImportPiSdk = () => import("./pi-model-discovery.js");
 let importPiSdk = defaultImportPiSdk;
 
+const ANTHROPIC_PROVIDER = "anthropic";
+const ANTHROPIC_SONNET_46_MODEL_ID = "claude-sonnet-4-6";
+const ANTHROPIC_SONNET_45_MODEL_ID = "claude-sonnet-4-5";
+
 const CODEX_PROVIDER = "openai-codex";
 const OPENAI_CODEX_GPT53_MODEL_ID = "gpt-5.3-codex";
 const OPENAI_CODEX_GPT53_SPARK_MODEL_ID = "gpt-5.3-codex-spark";
+
+function applyAnthropicSonnet46Fallback(models: ModelCatalogEntry[]): void {
+  const hasSonnet46 = models.some(
+    (entry) =>
+      entry.provider === ANTHROPIC_PROVIDER &&
+      entry.id.toLowerCase() === ANTHROPIC_SONNET_46_MODEL_ID,
+  );
+  if (hasSonnet46) {
+    return;
+  }
+
+  const baseModel = models.find(
+    (entry) =>
+      entry.provider === ANTHROPIC_PROVIDER &&
+      entry.id.toLowerCase() === ANTHROPIC_SONNET_45_MODEL_ID,
+  );
+  if (!baseModel) {
+    return;
+  }
+
+  models.push({
+    ...baseModel,
+    id: ANTHROPIC_SONNET_46_MODEL_ID,
+    name: "Claude Sonnet 4.6",
+  });
+}
 
 function applyOpenAICodexSparkFallback(models: ModelCatalogEntry[]): void {
   const hasSpark = models.some(
@@ -126,6 +156,7 @@ export async function loadModelCatalog(params?: {
         const input = Array.isArray(entry?.input) ? entry.input : undefined;
         models.push({ id, name, provider, contextWindow, reasoning, input });
       }
+      applyAnthropicSonnet46Fallback(models);
       applyOpenAICodexSparkFallback(models);
 
       if (models.length === 0) {
