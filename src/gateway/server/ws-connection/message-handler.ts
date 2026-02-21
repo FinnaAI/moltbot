@@ -35,7 +35,7 @@ import { buildDeviceAuthPayload } from "../../device-auth.js";
 import { isLoopbackAddress, isTrustedProxyAddress, resolveGatewayClientIp } from "../../net.js";
 import { resolveHostName } from "../../net.js";
 import { resolveNodeCommandAllowlist } from "../../node-command-policy.js";
-import { checkBrowserOrigin } from "../../origin-check.js";
+import { checkBrowserOrigin, resolveEffectiveAllowedOrigins } from "../../origin-check.js";
 import { GATEWAY_CLIENT_IDS } from "../../protocol/client-info.js";
 import {
   type ConnectParams,
@@ -307,7 +307,9 @@ export function attachGatewayWsMessageHandler(params: {
           const originCheck = checkBrowserOrigin({
             requestHost,
             origin: requestOrigin,
-            allowedOrigins: configSnapshot.gateway?.controlUi?.allowedOrigins,
+            allowedOrigins: resolveEffectiveAllowedOrigins(
+              configSnapshot.gateway?.controlUi?.allowedOrigins,
+            ),
           });
           if (!originCheck.ok) {
             const errorMessage =

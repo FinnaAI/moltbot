@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkBrowserOrigin } from "./origin-check.js";
+import { checkBrowserOrigin, resolveEffectiveAllowedOrigins } from "./origin-check.js";
 
 describe("checkBrowserOrigin", () => {
   it("accepts same-origin host matches", () => {
@@ -41,5 +41,56 @@ describe("checkBrowserOrigin", () => {
       origin: "https://attacker.example.com",
     });
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("resolveEffectiveAllowedOrigins", () => {
+  it("returns config origins when no env var", () => {
+    const result = resolveEffectiveAllowedOrigins(["https://a.example.com"], {
+      OPENCLAW_ALLOWED_ORIGINS: undefined,
+    });
+    expect(result).toEqual(["https://a.example.com"]);
+  });
+
+  it("returns env origins when no config origins", () => {
+    const result = resolveEffectiveAllowedOrigins(undefined, {
+      OPENCLAW_ALLOWED_ORIGINS: "https://b.example.com",
+    });
+    expect(result).toEqual(["https://b.example.com"]);
+  });
+
+  it("merges config and env origins", () => {
+    const result = resolveEffectiveAllowedOrigins(["https://a.example.com"], {
+      OPENCLAW_ALLOWED_ORIGINS: "https://b.example.com",
+    });
+    expect(result).toEqual(["https://a.example.com", "https://b.example.com"]);
+  });
+
+  it("deduplicates merged origins", () => {
+    const result = resolveEffectiveAllowedOrigins(["https://a.example.com"], {
+      OPENCLAW_ALLOWED_ORIGINS: "https://a.example.com,https://b.example.com",
+    });
+    expect(result).toEqual(["https://a.example.com", "https://b.example.com"]);
+  });
+
+  it("handles empty env var", () => {
+    const result = resolveEffectiveAllowedOrigins(["https://a.example.com"], {
+      OPENCLAW_ALLOWED_ORIGINS: "",
+    });
+    expect(result).toEqual(["https://a.example.com"]);
+  });
+
+  it("returns empty when both sources are empty", () => {
+    const result = resolveEffectiveAllowedOrigins(undefined, {
+      OPENCLAW_ALLOWED_ORIGINS: undefined,
+    });
+    expect(result).toEqual([]);
+  });
+
+  it("trims whitespace from env var entries", () => {
+    const result = resolveEffectiveAllowedOrigins([], {
+      OPENCLAW_ALLOWED_ORIGINS: " https://a.example.com , https://b.example.com ",
+    });
+    expect(result).toEqual(["https://a.example.com", "https://b.example.com"]);
   });
 });
